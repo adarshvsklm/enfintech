@@ -1,19 +1,27 @@
 import * as React from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
-// import { serverUrl } from '../../../serverUrl';
 import { useEffect } from 'react';
 import { Button } from '@mui/material';
-// import { display } from '@mui/system';
-// import { toast } from 'react-toastify';
-// import 'react-toastify/dist/ReactToastify.css';
 import { useState } from 'react';
 import { serverUrl } from '../ServerURL';
 import { setProductId } from '../Redux/User/Product';
-import {useDispatch} from 'react-redux';
+import { useDispatch } from 'react-redux';
+import {useNavigate} from 'react-router-dom'
+import Navbar from '../Components/Navbar';
+import Popup from '../Components/Popup';
 
 export default function ViewProducts() {
-    const dispatch = useDispatch()
+
+  const [alert,setAlert] =useState(false)
+  const [confirm,setConfirm] = useState(false)
+ 
+  const dispatch = useDispatch();
+  const navigate=useNavigate()
+
+  const handleConfirm=(e)=>{
+    setConfirm(e)
+  }
   const columns = [
     // { field: 'id', headerName: 'ID', width: 70 },
     { field: 'name', headerName: 'Name', width: 230 },
@@ -26,44 +34,33 @@ export default function ViewProducts() {
       headerName: 'Action',
       sortable: false,
       renderCell: (params) => {
-        // const onClick = async ({e,accept}) => {
-        //    e.stopPropagation(); // don't select this row after clicking
-        //   try {   
-        //     if (accept) {
-        //       axios
-        //         .patch(`${serverUrl}/admin/hotel/accept?id=${params.row._id}`)
-        //         .then((res) => {
-        //           // toast('UnBlocked User ', { autoClose: 800 });
-        //           setBlocked(!blocked);
-        //         });
-        //     } else {
-        //       axios
-        //         .patch(`${serverUrl}/admin/hotel/reject?id=${params.row._id}`)
-        //         .then((res) => {
-        //           // toast('Blocked User ', { autoClose: 800 });
-        //           setBlocked(!blocked);
-        //         });
-        //     }
-        //   } catch (err) {
-        //     console.log(err);
-        //     // toast("Some Error Occured",{autoClose:800})
-        //   }
-        // };
-        const handleEdit =()=>{
-            console.log(params.row._id);
-            
-            dispatch(setProductId(params.row._id))
-        }
+        const handleEdit = () => {
+          console.log(params.row._id);
 
-        const handleDelete =(e)=>{
-            axios.delete(`${serverUrl}/${params.row._id}`)
-            .then((res)=>{
+          dispatch(setProductId(params.row._id));
+          navigate('/product/edit')
+        };
+
+        
+
+        const handleDelete = (e) => {
+          // setAlert(true)
+        
+          // if(confirm){
+
+            axios
+              .delete(`${serverUrl}/product/delete?id=${params.row._id}`)
+              .then((res) => {
                 console.log(res);
-            })
-            .catch((err)=>{
+  
+                setChange(!change)
+              })
+              .catch((err) => {
                 console.log(err);
-            })
-        }
+              });
+          };
+          // }
+
 
         // if (params.row.isBlocked) {
         return (
@@ -72,7 +69,9 @@ export default function ViewProducts() {
               style={{ zIndex: '0' }}
               variant='outlined'
               color='success'
-              onClick={(e)=>{handleEdit(e)}}
+              onClick={(e) => {
+                handleEdit(e);
+              }}
             >
               Edit
             </Button>
@@ -80,7 +79,9 @@ export default function ViewProducts() {
               style={{ zIndex: '0' }}
               variant='outlined'
               color='error'
-              onClick={(e)=>{handleDelete(e);}}
+              onClick={(e) => {
+                handleDelete(e);
+              }}
             >
               Delete
             </Button>
@@ -91,38 +92,10 @@ export default function ViewProducts() {
         // }
       },
     },
-
-    // {
-    //   field: 'age',
-    //   headerName: 'Age',
-    //   type: 'number',
-    //   width: 90,
-    // },
-    // {
-    //   field: 'fullName',
-    //   headerName: 'Full name',
-    //   description: 'This column has a value getter and is not sortable.',
-    //   sortable: false,
-    //   width: 160,
-    //   valueGetter: (params) =>
-    //     `${params.row.firstName || ''} ${params.row.lastName || ''}`,
-    // },
   ];
 
-  const rows = [
-    { id: 1, lastName: 'Snow', firstName: 'Jon', age: 35 },
-    { id: 2, lastName: 'Lannister', firstName: 'Cersei', age: 42 },
-    { id: 3, lastName: 'Lannister', firstName: 'Jaime', age: 45 },
-    { id: 4, lastName: 'Stark', firstName: 'Arya', age: 16 },
-    { id: 5, lastName: 'Targaryen', firstName: 'Daenerys', age: null },
-    { id: 6, lastName: 'Melisandre', firstName: null, age: 150 },
-    { id: 7, lastName: 'Clifford', firstName: 'Ferrara', age: 44 },
-    { id: 8, lastName: 'Frances', firstName: 'Rossini', age: 36 },
-    { id: 9, lastName: 'Roxie', firstName: 'Harvey', age: 65 },
-  ];
-
-  const [hotels, setHotels] = React.useState();
-  const [blocked, setBlocked] = useState();
+  const [products, setProducts] = React.useState();
+  const [change, setChange] = useState(true);
 
   useEffect(() => {
     axios
@@ -130,15 +103,18 @@ export default function ViewProducts() {
       .then((res) => {
         console.log(res.data.data);
         let response = res.data.data;
-        setHotels(response);
+        setProducts(response);
       })
       .catch((err) => {
         console.log(err);
       });
-  }, [blocked]);
+  }, [change]);
 
-  console.log(hotels);
+  console.log(products);
   return (
+    <>  
+    <Navbar />
+    {alert ? <Popup onChange={handleConfirm} /> :''}
     <div
       style={{
         height: 500,
@@ -147,9 +123,9 @@ export default function ViewProducts() {
         justifyContent: 'space-between',
       }}
     >
-      {hotels && (
+      {products && (
         <DataGrid
-          rows={hotels}
+          rows={products}
           columns={columns}
           pageSize={10}
           getRowId={(row) => row._id}
@@ -157,6 +133,6 @@ export default function ViewProducts() {
           checkboxSelection
         />
       )}
-    </div>
+    </div></>
   );
 }
